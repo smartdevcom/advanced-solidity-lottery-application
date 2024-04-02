@@ -147,7 +147,10 @@ contract Lottery {
 
     // NOTE: This should not be used for generating random number in real world
     function generateRandomNumber() private view returns (uint) {
-        return uint(keccak256(block.difficulty, now, lotteryBag));
+        return
+            uint(
+                keccak256(abi.encodePacked(block.difficulty, now, lotteryBag))
+            );
     }
 
     // Modifiers
