@@ -2,7 +2,7 @@ pragma solidity ^0.4.20;
 
 contract LotteryGenerator {
     address[] public lotteries;
-    struct lottery{
+    struct lottery {
         uint index;
         address manager;
     }
@@ -15,10 +15,10 @@ contract LotteryGenerator {
         lotteryStructs[newLottery].manager = msg.sender;
 
         // event
-        LotteryCreated(newLottery);
+        emit LotteryCreated(newLottery);
     }
 
-    function getLotteries() public view returns(address[]) {
+    function getLotteries() public view returns (address[]) {
         return lotteries;
     }
 
@@ -27,13 +27,11 @@ contract LotteryGenerator {
         uint indexToDelete = lotteryStructs[lotteryAddress].index;
         address lastAddress = lotteries[lotteries.length - 1];
         lotteries[indexToDelete] = lastAddress;
-        lotteries.length --;
+        lotteries.length--;
     }
 
     // Events
-    event LotteryCreated(
-        address lotteryAddress
-    );
+    event LotteryCreated(address lotteryAddress);
 }
 
 contract Lottery {
@@ -59,13 +57,13 @@ contract Lottery {
     uint public ethToParticipate;
 
     // constructor
-    function Lottery(string name, address creator) public {
+    constructor(string name, address creator) public {
         manager = creator;
         lotteryName = name;
     }
 
     // Let users participate by sending eth directly to contract address
-    function () public payable {
+    function() public payable {
         // player name will be unknown
         participate("Unknown");
     }
@@ -85,23 +83,29 @@ contract Lottery {
         }
 
         lotteryBag.push(msg.sender);
-    
+
         // event
-        PlayerParticipated(players[msg.sender].name, players[msg.sender].entryCount);
+        emit PlayerParticipated(
+            players[msg.sender].name,
+            players[msg.sender].entryCount
+        );
     }
 
-    function activateLottery(uint maxEntries, uint ethRequired) public restricted {
+    function activateLottery(
+        uint maxEntries,
+        uint ethRequired
+    ) public restricted {
         isLotteryLive = true;
-        maxEntriesForPlayer = maxEntries == 0 ? 1: maxEntries;
-        ethToParticipate = ethRequired == 0 ? 1: ethRequired;
+        maxEntriesForPlayer = maxEntries == 0 ? 1 : maxEntries;
+        ethToParticipate = ethRequired == 0 ? 1 : ethRequired;
     }
 
     function declareWinner() public restricted {
         require(lotteryBag.length > 0);
 
         uint index = generateRandomNumber() % lotteryBag.length;
-        lotteryBag[index].transfer(this.balance);
-         
+        lotteryBag[index].transfer(address(this).balance);
+
         winner.name = players[lotteryBag[index]].name;
         winner.entryCount = players[lotteryBag[index]].entryCount;
 
@@ -111,16 +115,18 @@ contract Lottery {
 
         // Mark the lottery inactive
         isLotteryLive = false;
-    
+
         // event
-        WinnerDeclared(winner.name, winner.entryCount);
+        emit WinnerDeclared(winner.name, winner.entryCount);
     }
 
-    function getPlayers() public view returns(address[]) {
+    function getPlayers() public view returns (address[]) {
         return addressIndexes;
     }
 
-    function getPlayer(address playerAddress) public view returns (string, uint) {
+    function getPlayer(
+        address playerAddress
+    ) public view returns (string, uint) {
         if (isNewPlayer(playerAddress)) {
             return ("", 0);
         }
@@ -128,11 +134,11 @@ contract Lottery {
     }
 
     function getWinningPrice() public view returns (uint) {
-        return this.balance;
+        return address(this).balance;
     }
 
     // Private functions
-    function isNewPlayer(address playerAddress) private view returns(bool) {
+    function isNewPlayer(address playerAddress) private view returns (bool) {
         if (addressIndexes.length == 0) {
             return true;
         }
@@ -140,7 +146,7 @@ contract Lottery {
     }
 
     // NOTE: This should not be used for generating random number in real world
-    function generateRandomNumber() private view returns(uint) {
+    function generateRandomNumber() private view returns (uint) {
         return uint(keccak256(block.difficulty, now, lotteryBag));
     }
 
@@ -151,6 +157,6 @@ contract Lottery {
     }
 
     // Events
-    event WinnerDeclared( string name, uint entryCount );
-    event PlayerParticipated( string name, uint entryCount );
+    event WinnerDeclared(string name, uint entryCount);
+    event PlayerParticipated(string name, uint entryCount);
 }
